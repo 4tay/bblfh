@@ -12,6 +12,7 @@ public class Main {
 	public static void main(String[] args) {
 		
 		
+		
 		get("/bands", (req, res) -> {
 			DBConnection conn = new DBConnection();
 			return conn.getBands();
@@ -38,15 +39,23 @@ public class Main {
 				System.out.println(e.getMessage());
 			}
 
-			System.out.println("This hapened");
+			System.out.println("This happened");
 			return fullOb;
+		});
+		get("/fan/:fanID", (req,res) -> {
+			
+			DBConnection conn = new DBConnection();
+			return conn.getFan(Integer.parseInt(req.params(":fanID")));
+			
+		});
+		
+		get("/fans", (req,res) -> {
+			DBConnection conn = new DBConnection();
+			return conn.getAllFans();
 		});
 		get("/band/:bandID", (req, res) -> {
 			DBConnection conn = new DBConnection();
-
-			String band = conn.getBandName(req.params(":bandID"));
-
-			return band;
+			return conn.getBandName(Integer.parseInt(req.params(":bandID")));
 		});
 		get("/tours", (req, res) -> {
 			DBConnection conn = new DBConnection();
@@ -68,17 +77,37 @@ public class Main {
 		});
 		post("/addTour", (req,res) -> {
 			DBConnection conn = new DBConnection();
-			return conn.addTour(Integer.parseInt(req.queryParams("bandID")), 
+			return conn.addTour(
+					req.queryParams("tourName"), 
 					req.queryParams("tourStart"), 
 					req.queryParams("tourEnd"));
 		});
 		post("/addEvent", (req,res) -> {
 			DBConnection conn = new DBConnection();
+			
+			System.out.println("got a connection");
+			
+			/*TODO
+			 * FIX THIS addEvent doesn't currently work...
+			 */
+			
 			return conn.addEvent(Integer.parseInt(req.queryParams("tourID")), 
-					req.queryParams("gigDate"), req.queryParams("tourName"), 
-					req.queryParams("tourAddress"), Float.parseFloat(req.queryParams("lat")), 
-					Float.parseFloat(req.queryParams("lng")), Integer.parseInt(req.queryParams("type")),
-					Integer.parseInt(req.queryParams("houseConfirmed")));
+					req.queryParams("showDate"), req.queryParams("showName"), 
+					req.queryParams("showAddress"), req.queryParams("showAddressTwo"),
+					Integer.parseInt(req.queryParams("showZip")), req.queryParams("showCity"),
+					req.queryParams("showState"), req.queryParams("showCountry"),
+					Integer.parseInt(req.queryParams("showType")), 
+					Integer.parseInt(req.queryParams("homeConfirmed")),
+					Float.parseFloat(req.queryParams("lat")),
+					Float.parseFloat(req.queryParams("lng")));
+			
+		});
+		
+		post("/addFan", (req,res) -> {
+			DBConnection conn = new DBConnection();
+			
+			return conn.addFan(req.queryParams("fanName"),
+					req.queryParams(req.queryParams("fanEmail")));
 		});
 
 	}

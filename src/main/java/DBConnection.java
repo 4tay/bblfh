@@ -48,7 +48,7 @@ public class DBConnection {
 		dataSource.setPassword(password);
 		dataSource.setServerName("127.0.0.1");
 		dataSource.setPort(3306);
-		dataSource.setDatabaseName("bblfh");
+		dataSource.setDatabaseName("harbor");
 
 		try {
 			conn = dataSource.getConnection();
@@ -59,12 +59,13 @@ public class DBConnection {
 		}
 	}
 
-	public String getBandName(String id) {
+	public String getBandName(int bandID) {
 		try {
-			ResultSet rs = stmt.executeQuery("SELECT band_name FROM band where band_id =" + id);
+			ResultSet rs = stmt.executeQuery("SELECT band_name FROM band where band_id = '" + String.valueOf(bandID) + "';");
 			if (rs.first()) {
+				String bandName = rs.getString(1);
 				conn.close();
-				return rs.getString(1);
+				return bandName;
 			} else {
 				conn.close();
 				return "none found..";
@@ -73,6 +74,102 @@ public class DBConnection {
 			System.out.println("error... " + ex.getMessage());
 		}
 		return "ERRORRRR";
+	}
+	
+	public String getFan(int fanID) {
+		try {
+			ResultSet rs = stmt.executeQuery("SELECT * FROM fan where fan_id = '" + String.valueOf(fanID) + "';");
+			System.out.println("Success!!!");
+			System.out.println("This hapened");
+			if (rs.first()) {
+				JSONObject fullOb = new JSONObject();
+				JSONArray allFans = new JSONArray();
+				try {
+					JSONObject singleFan = new JSONObject();
+					singleFan.put("fanID", rs.getInt(1));
+					singleFan.put("fanName", rs.getString(2));
+					singleFan.put("fanEmail", rs.getString(3));
+					singleFan.put("fanRank", rs.getInt(4));
+					allFans.put(singleFan);
+				} catch (JSONException e) {
+					System.out.println(e.getMessage());
+				}
+				System.out.println("moved to first!");
+				while (rs.next()) {
+					try {
+						JSONObject singleFan = new JSONObject();
+						singleFan.put("fanID", rs.getInt(1));
+						singleFan.put("fanName", rs.getString(2));
+						singleFan.put("fanEmail", rs.getString(3));
+						singleFan.put("fanRank", rs.getInt(4));
+						allFans.put(singleFan);
+					} catch (JSONException e) {
+						System.out.println(e.getMessage());
+					}
+				}
+				try {
+					fullOb.put("fans", allFans);
+					conn.close();
+					return String.valueOf(fullOb);
+				} catch (JSONException ex) {
+					System.out.println(ex.getMessage());
+				}
+			} else {
+				System.out.println("didn't get anything back...");
+			}
+			conn.close();
+		} catch (SQLException ex) {
+			System.out.println("Error: " + ex.getMessage());
+		}
+		return "failure...";
+	}
+	
+	public String getAllFans() {
+		try {
+			ResultSet rs = stmt.executeQuery("SELECT * FROM fan");
+			System.out.println("Success!!!");
+			System.out.println("This hapened");
+			if (rs.first()) {
+				JSONObject fullOb = new JSONObject();
+				JSONArray allFans = new JSONArray();
+				try {
+					JSONObject singleFan = new JSONObject();
+					singleFan.put("fanID", rs.getInt(1));
+					singleFan.put("fanName", rs.getString(2));
+					singleFan.put("fanEmail", rs.getString(3));
+					singleFan.put("fanRank", rs.getInt(4));
+					allFans.put(singleFan);
+				} catch (JSONException e) {
+					System.out.println(e.getMessage());
+				}
+				System.out.println("moved to first!");
+				while (rs.next()) {
+					try {
+						JSONObject singleFan = new JSONObject();
+						singleFan.put("fanID", rs.getInt(1));
+						singleFan.put("fanName", rs.getString(2));
+						singleFan.put("fanEmail", rs.getString(3));
+						singleFan.put("fanRank", rs.getInt(4));
+						allFans.put(singleFan);
+					} catch (JSONException e) {
+						System.out.println(e.getMessage());
+					}
+				}
+				try {
+					fullOb.put("fans", allFans);
+					conn.close();
+					return String.valueOf(fullOb);
+				} catch (JSONException ex) {
+					System.out.println(ex.getMessage());
+				}
+			} else {
+				System.out.println("didn't get anything back...");
+			}
+			conn.close();
+		} catch (SQLException ex) {
+			System.out.println("Error: " + ex.getMessage());
+		}
+		return "failure....";
 	}
 
 	public ArrayList<String> getBandNames() {
@@ -145,7 +242,7 @@ public class DBConnection {
 	}
 	public String getTours() {
 		try {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM tour;");
+			ResultSet rs = stmt.executeQuery("SELECT * FROM tour");
 			if (rs.first()) {
 				JSONObject fullOb = new JSONObject();
 				JSONArray allTours = new JSONArray();
@@ -191,7 +288,7 @@ public class DBConnection {
 	}
 	public String getEventByID(int tourID) {
 		try {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM tour_date where tour_id = " + String.valueOf(tourID));
+			ResultSet rs = stmt.executeQuery("SELECT * FROM show_date where tour_id = '" + String.valueOf(tourID) + "';");
 			if (rs.first()) {
 				JSONObject fullOb = new JSONObject();
 				JSONArray allEvents = new JSONArray();
@@ -256,9 +353,9 @@ public class DBConnection {
 		return "failure...";
 	}
 
-	public String addTour(int bandID, String startDate, String endDate) {
+	public String addTour(String tourName, String startDate, String endDate) {
 		try {
-			stmt.execute("INSERT INTO tour (band_id,start_date,end_date) values('" + String.valueOf(bandID) + "','"
+			stmt.execute("INSERT INTO tour (tour_name,start_date,end_date) values('" + tourName + "','"
 					+ startDate + "','" + endDate + "');");
 			conn.close();
 			return "Success!";
@@ -268,15 +365,18 @@ public class DBConnection {
 		return "failure...";
 	}
 
-	public String addEvent(int tourID, String tourDate, String tourName, String tourAddress, Float lat, Float lng,
-			int type, int houseConfirmed) {
+	public String addEvent(int tourID, String showDate,
+			String showName, String showAddress, String showAddressTwo,
+			int showZip, String showCity, String showState, String showCountry,
+			int showType, int homeConfirmed, Float lat, Float lng) {
 
 		try {
 			stmt.execute(
-					"INSERT INTO tour_date (tour_id,td_date,td_name,td_address,td_lat,td_lng,td_type,home_confirmed) VALUES('"
-							+ String.valueOf(tourID) + "','" + tourDate + "','" + tourName + "','" + tourAddress + "','"
-							+ String.valueOf(lat) + "','" + String.valueOf(lng) + "','" + String.valueOf(type) + "','"
-							+ String.valueOf(houseConfirmed) + "');");
+					"INSERT INTO show_date (tour_id,show_date,show_name,show_address, show_address_2, show_zip, show_city, show_state, show_country, show_type, home_confirmed,show_lat,show_lng,td_type) VALUES('"
+							+ String.valueOf(tourID) + "','" + showDate + "','" + showName + "','" + showAddress + "','"
+							+ showAddressTwo + "','" + showZip + "','" + showCity + "','" + showState + "','" + showCountry + "','"
+							+ String.valueOf(showType) + "','" + String.valueOf(homeConfirmed) + "','"
+							+ String.valueOf(lat) + "','" + String.valueOf(lng) + "');");
 			conn.close();
 			return "Success!";
 		} catch (SQLException ex) {
@@ -284,5 +384,19 @@ public class DBConnection {
 		}
 		return "failure...";
 	}
+	
+	public String addFan(String fanName, String fanEmail) {
+		try {
+			stmt.execute("INSERT INTO fan (fan_name,fan_email) values('"+fanName +"','" + fanEmail+"');");
+			conn.close();
+			return "Success!";
+		}
+		catch (SQLException ex) {
+		System.out.println(ex.getMessage());
+		}
+		
+		return "failure...";
+	}
+	
 }
 
