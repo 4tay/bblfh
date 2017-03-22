@@ -49,6 +49,14 @@ public class Main {
 			
 		});
 		
+		get("/fanLogin/:userName/:password", (req,res) -> {
+			DBConnection conn = new DBConnection();
+			
+			System.out.println(req.params(":userName"));
+			System.out.println(req.params(":password"));
+			return conn.getLogin(req.params(":userName"), req.params(":password"));
+		});
+		
 		get("/fans", (req,res) -> {
 			DBConnection conn = new DBConnection();
 			return conn.getAllFans();
@@ -87,9 +95,24 @@ public class Main {
 			
 			System.out.println("got a connection");
 			
-			/*TODO
-			 * FIX THIS addEvent doesn't currently work...
-			 */
+			System.out.println("did we get this far?");
+
+			
+			
+			System.out.println("tourID: " + String.valueOf(Integer.parseInt(req.queryParams("tourID")))); 
+			System.out.println("showDate: " + req.queryParams("showDate"));
+			System.out.println("showName: " + req.queryParams("showName")); 
+			System.out.println("showAddress: " + req.queryParams("showAddress"));
+			System.out.println("showAddressTwo: " + req.queryParams("showAddressTwo"));
+			System.out.println("showZip: " + String.valueOf(Integer.parseInt(req.queryParams("showZip"))));
+			System.out.println("showCity: " + req.queryParams("showCity"));
+			System.out.println("showState: " + req.queryParams("showState"));
+			System.out.println("showCountry: " +  req.queryParams("showCountry"));
+			System.out.println("showType: " + String.valueOf(Integer.parseInt(req.queryParams("showType")))); 
+			System.out.println("homeConfirmed: " + String.valueOf(Integer.parseInt(req.queryParams("homeConfirmed"))));
+			System.out.println("lat: " + String.valueOf(Float.parseFloat(req.queryParams("lat"))));
+			System.out.println("lng: " + String.valueOf(Float.parseFloat(req.queryParams("lng"))));
+			
 			
 			return conn.addEvent(Integer.parseInt(req.queryParams("tourID")), 
 					req.queryParams("showDate"), req.queryParams("showName"), 
@@ -107,7 +130,8 @@ public class Main {
 			DBConnection conn = new DBConnection();
 			
 			return conn.addFan(req.queryParams("fanName"),
-					req.queryParams(req.queryParams("fanEmail")));
+					req.queryParams("fanEmail"),
+					req.queryParams("fanPass"));
 		});
 
 	}

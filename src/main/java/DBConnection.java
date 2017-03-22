@@ -26,20 +26,17 @@ public class DBConnection {
 	public DBConnection() {
 		String userName = "";
 		String password = "";
-		 try(FileInputStream inputStream = new FileInputStream("dbPass.txt"))
-		 {
-		 String fullFile = IOUtils.toString(inputStream);
-		 System.out.println("read my file! " + fullFile);
-		
-		 String[] fullArray = fullFile.split(",");
-		
-		 userName = fullArray[0];
-		 System.out.println(userName);
-		 password = fullArray[1];
-		 System.out.println(password);
-		
-		 } catch(IOException ex){
-		 System.out.println("file read error, username: " + ex.getMessage());
+		 try(FileInputStream inputStream = new FileInputStream("dbPass.txt")) {
+			 String fullFile = IOUtils.toString(inputStream);
+			 System.out.println("read my file! " + fullFile);
+			 String[] fullArray = fullFile.split(",");
+			 userName = fullArray[0];
+			 System.out.println(userName);
+			 password = fullArray[1];
+			 System.out.println(password);
+		 }
+		 catch(IOException ex){
+			 System.out.println("file read error, username: " + ex.getMessage());
 		 }
 
 		System.out.println("attempt connection");
@@ -47,6 +44,9 @@ public class DBConnection {
 		dataSource.setUser(userName);
 		dataSource.setPassword(password);
 		dataSource.setServerName("127.0.0.1");
+//		dataSource.setUser("businessFawn");
+//		dataSource.setPassword("D#Wg0ng");
+//		dataSource.setServerName("192.168.1.98");
 		dataSource.setPort(3306);
 		dataSource.setDatabaseName("harbor");
 
@@ -286,23 +286,55 @@ public class DBConnection {
 		
 		return "failure...";
 	}
+	public String getLogin(String userName, String password) {
+		
+		try {
+			ResultSet rs = stmt.executeQuery("SELECT * FROM fan WHERE fan_email = '" + userName + "' and fan_pass = '" + password + "';");
+			System.out.println("Looking for a fan....");
+			if(rs.first()) {
+				System.out.println("Got a fan!!!");
+				JSONObject fullOb = new JSONObject();
+				try {
+					fullOb.put("fanID",rs.getInt(1));
+					fullOb.put("fanName", rs.getString(2));
+					fullOb.put("fanEmail", rs.getString(3));
+					fullOb.put("fanAchievement", rs.getString(4));
+					
+					return fullOb.toString();
+				} catch(JSONException e) {
+					System.out.println("JSON Error.... " + e.getMessage());
+				}
+			}
+			
+		} catch(SQLException e) {
+			System.out.println("Error.... " + e.getMessage());
+		}
+		
+		
+		return"failure....";
+	}
 	public String getEventByID(int tourID) {
 		try {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM show_date where tour_id = '" + String.valueOf(tourID) + "';");
+			ResultSet rs = stmt.executeQuery("SELECT * FROM tour_show where tour_id = '" + String.valueOf(tourID) + "';");
 			if (rs.first()) {
 				JSONObject fullOb = new JSONObject();
 				JSONArray allEvents = new JSONArray();
 				try {
 					JSONObject singleEvent = new JSONObject();
-					singleEvent.put("tdID", rs.getInt(1));
+					singleEvent.put("showID", rs.getInt(1));
 					singleEvent.put("tourID", rs.getInt(2));
-					singleEvent.put("tdDate", rs.getString(3));
-					singleEvent.put("tdName", rs.getString(4));
-					singleEvent.put("tdAddress", rs.getString(5));
-					singleEvent.put("tdLat", rs.getFloat(6));
-					singleEvent.put("tdLng", rs.getFloat(7));
-					singleEvent.put("tdType", rs.getInt(8));
-					singleEvent.put("tdHomeConfirmed", rs.getInt(9));
+					singleEvent.put("showDate", rs.getString(3));
+					singleEvent.put("showName", rs.getString(4));
+					singleEvent.put("showAddress", rs.getString(5));
+					singleEvent.put("showAddressTwo", rs.getString(6));
+					singleEvent.put("showZip", rs.getInt(7));
+					singleEvent.put("showCity", rs.getString(8));
+					singleEvent.put("showState", rs.getString(9));
+					singleEvent.put("showCountry", rs.getString(10));
+					singleEvent.put("showType", rs.getInt(11));
+					singleEvent.put("homeConfirmed", rs.getInt(12));
+					singleEvent.put("showLat", rs.getFloat(13));
+					singleEvent.put("showLng", rs.getFloat(14));
 					allEvents.put(singleEvent);
 				} catch (JSONException e) {
 					System.out.println(e.getMessage());
@@ -311,15 +343,20 @@ public class DBConnection {
 				while (rs.next()) {
 					try {
 						JSONObject singleEvent = new JSONObject();
-						singleEvent.put("tdID", rs.getInt(1));
+						singleEvent.put("showID", rs.getInt(1));
 						singleEvent.put("tourID", rs.getInt(2));
-						singleEvent.put("tdDate", rs.getString(3));
-						singleEvent.put("tdName", rs.getString(4));
-						singleEvent.put("tdAddress", rs.getString(5));
-						singleEvent.put("tdLat", rs.getFloat(6));
-						singleEvent.put("tdLng", rs.getFloat(7));
-						singleEvent.put("tdType", rs.getInt(8));
-						singleEvent.put("tdHomeConfirmed", rs.getInt(9));
+						singleEvent.put("showDate", rs.getString(3));
+						singleEvent.put("showName", rs.getString(4));
+						singleEvent.put("showAddress", rs.getString(5));
+						singleEvent.put("showAddressTwo", rs.getString(6));
+						singleEvent.put("showZip", rs.getInt(7));
+						singleEvent.put("showCity", rs.getString(8));
+						singleEvent.put("showState", rs.getString(9));
+						singleEvent.put("showCountry", rs.getString(10));
+						singleEvent.put("showType", rs.getInt(11));
+						singleEvent.put("homeConfirmed", rs.getInt(12));
+						singleEvent.put("showLat", rs.getFloat(13));
+						singleEvent.put("showLng", rs.getFloat(14));
 						allEvents.put(singleEvent);
 					} catch (JSONException e) {
 						System.out.println(e.getMessage());
@@ -372,11 +409,12 @@ public class DBConnection {
 
 		try {
 			stmt.execute(
-					"INSERT INTO show_date (tour_id,show_date,show_name,show_address, show_address_2, show_zip, show_city, show_state, show_country, show_type, home_confirmed,show_lat,show_lng,td_type) VALUES('"
-							+ String.valueOf(tourID) + "','" + showDate + "','" + showName + "','" + showAddress + "','"
-							+ showAddressTwo + "','" + showZip + "','" + showCity + "','" + showState + "','" + showCountry + "','"
-							+ String.valueOf(showType) + "','" + String.valueOf(homeConfirmed) + "','"
-							+ String.valueOf(lat) + "','" + String.valueOf(lng) + "');");
+					"INSERT INTO tour_show (tour_id,show_date,show_name,show_address, show_address_2, show_zip, "
+					+ "show_city, show_state, show_country, show_type, home_confirmed,show_lat,show_lng) " +
+					"VALUES('"+ String.valueOf(tourID) + "','" + showDate + "','" + showName + "','" + showAddress
+					+ "','" + showAddressTwo + "','" + showZip + "','" + showCity + "','" + showState + "','"
+					+ showCountry + "','" + String.valueOf(showType) + "','" + String.valueOf(homeConfirmed) + "','"
+					+ String.valueOf(lat) + "','" + String.valueOf(lng) + "');");
 			conn.close();
 			return "Success!";
 		} catch (SQLException ex) {
@@ -385,9 +423,9 @@ public class DBConnection {
 		return "failure...";
 	}
 	
-	public String addFan(String fanName, String fanEmail) {
+	public String addFan(String fanName, String fanEmail, String fanPass) {
 		try {
-			stmt.execute("INSERT INTO fan (fan_name,fan_email) values('"+fanName +"','" + fanEmail+"');");
+			stmt.execute("INSERT INTO fan (fan_name,fan_email,fan_pass) values('"+fanName +"','" + fanEmail+"','" + fanPass + "');");
 			conn.close();
 			return "Success!";
 		}
@@ -399,4 +437,3 @@ public class DBConnection {
 	}
 	
 }
-
