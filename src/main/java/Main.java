@@ -8,8 +8,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.concurrent.ThreadPoolExecutor; 
-public class Main {
+public class Main extends Thread{
+	
+	int counter = 0;
 	public static void main(String[] args) {
+		
+		
 		
 		
 		
@@ -73,6 +77,23 @@ public class Main {
 			DBConnection conn = new DBConnection();
 			return conn.getEventByID(Integer.parseInt(req.params(":tourID")));
 		});
+		
+		get("homes/:userName/:password", (req,res) -> {
+			DBConnection conn = new DBConnection();
+			return conn.getFanHomes(req.params(":userName"), req.params(":password"));
+		});
+		get("homeInTown/:username/:password", (req,res) -> {
+			DBConnection conn = new DBConnection();
+			
+			return conn.showsInTownOfHomes(req.params(":userName"),
+					req.params(":password"));
+		});
+		get("homeInTownWithoutConfirmation/:username/:password", (req,res) -> {
+			DBConnection conn = new DBConnection();
+			
+			return conn.showsInTownWithoutHome(req.params(":userName"),
+					req.params(":password"));
+		});
 
 		post("/addBand", (req, res) -> {
 			DBConnection conn = new DBConnection();
@@ -89,6 +110,31 @@ public class Main {
 					req.queryParams("tourName"), 
 					req.queryParams("tourStart"), 
 					req.queryParams("tourEnd"));
+		});
+		post("/addHome", (req,res) -> {
+			DBConnection conn = new DBConnection();
+			
+			System.out.println("userName: " + req.queryParams("userName")); 
+			System.out.println("password: " + req.queryParams("password"));
+			System.out.println("homeName: " + req.queryParams("homeName")); 
+			System.out.println("homeAddress: " + req.queryParams("homeAddress"));
+			System.out.println("homeAddressTwo: " + req.queryParams("homeAddressTwo"));
+			System.out.println("homeZip: " + String.valueOf(Integer.parseInt(req.queryParams("homeZip"))));
+			System.out.println("homeCity: " + req.queryParams("homeCity"));
+			System.out.println("homeState: " + req.queryParams("homeState"));
+			System.out.println("homeCountry: " +  req.queryParams("homeCountry")); 
+			System.out.println("lat: " + String.valueOf(Float.parseFloat(req.queryParams("homeLat"))));
+			System.out.println("lng: " + String.valueOf(Float.parseFloat(req.queryParams("homeLng"))));
+			
+	
+			
+			return conn.addHome(req.queryParams("userName"), req.queryParams("password"),
+					req.queryParams("homeName"), req.queryParams("homeAddress"),
+					req.queryParams("homeAddressTwo"), Integer.parseInt(req.queryParams("homeZip")),
+					req.queryParams("homeCity"), req.queryParams("homeState"),
+					req.queryParams("homeCountry"), Float.parseFloat(req.queryParams("homeLat")),
+					Float.parseFloat(req.queryParams("homeLng")), req.queryParams("homePhoto"));
+			
 		});
 		post("/addEvent", (req,res) -> {
 			DBConnection conn = new DBConnection();
@@ -131,10 +177,9 @@ public class Main {
 			
 			return conn.addFan(req.queryParams("fanName"),
 					req.queryParams("fanEmail"),
-					req.queryParams("fanPass"));
+					req.queryParams("fanPass"),
+					req.queryParams("fanPhoto"));
 		});
 
 	}
-	
-	
 }

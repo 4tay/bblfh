@@ -44,9 +44,6 @@ public class DBConnection {
 		dataSource.setUser(userName);
 		dataSource.setPassword(password);
 		dataSource.setServerName("127.0.0.1");
-//		dataSource.setUser("businessFawn");
-//		dataSource.setPassword("D#Wg0ng");
-//		dataSource.setServerName("192.168.1.98");
 		dataSource.setPort(3306);
 		dataSource.setDatabaseName("harbor");
 
@@ -73,7 +70,7 @@ public class DBConnection {
 		} catch (SQLException ex) {
 			System.out.println("error... " + ex.getMessage());
 		}
-		return "ERRORRRR";
+		return "failure....";
 	}
 	
 	public String getFan(int fanID) {
@@ -277,13 +274,11 @@ public class DBConnection {
 				}
 			} else {
 				System.out.println("didn't get anything back...");
-			}
-			
+			}	
 			conn.close();
 		} catch(SQLException ex) {
 			System.out.println(ex.getMessage());
 		}
-		
 		return "failure...";
 	}
 	public String getLogin(String userName, String password) {
@@ -305,79 +300,171 @@ public class DBConnection {
 					System.out.println("JSON Error.... " + e.getMessage());
 				}
 			}
-			
 		} catch(SQLException e) {
 			System.out.println("Error.... " + e.getMessage());
 		}
-		
-		
 		return"failure....";
 	}
 	public String getEventByID(int tourID) {
 		try {
 			ResultSet rs = stmt.executeQuery("SELECT * FROM tour_show where tour_id = '" + String.valueOf(tourID) + "';");
 			if (rs.first()) {
-				JSONObject fullOb = new JSONObject();
-				JSONArray allEvents = new JSONArray();
-				try {
-					JSONObject singleEvent = new JSONObject();
-					singleEvent.put("showID", rs.getInt(1));
-					singleEvent.put("tourID", rs.getInt(2));
-					singleEvent.put("showDate", rs.getString(3));
-					singleEvent.put("showName", rs.getString(4));
-					singleEvent.put("showAddress", rs.getString(5));
-					singleEvent.put("showAddressTwo", rs.getString(6));
-					singleEvent.put("showZip", rs.getInt(7));
-					singleEvent.put("showCity", rs.getString(8));
-					singleEvent.put("showState", rs.getString(9));
-					singleEvent.put("showCountry", rs.getString(10));
-					singleEvent.put("showType", rs.getInt(11));
-					singleEvent.put("homeConfirmed", rs.getInt(12));
-					singleEvent.put("showLat", rs.getFloat(13));
-					singleEvent.put("showLng", rs.getFloat(14));
-					allEvents.put(singleEvent);
-				} catch (JSONException e) {
-					System.out.println(e.getMessage());
-				}
-				System.out.println("moved to first!");
-				while (rs.next()) {
-					try {
-						JSONObject singleEvent = new JSONObject();
-						singleEvent.put("showID", rs.getInt(1));
-						singleEvent.put("tourID", rs.getInt(2));
-						singleEvent.put("showDate", rs.getString(3));
-						singleEvent.put("showName", rs.getString(4));
-						singleEvent.put("showAddress", rs.getString(5));
-						singleEvent.put("showAddressTwo", rs.getString(6));
-						singleEvent.put("showZip", rs.getInt(7));
-						singleEvent.put("showCity", rs.getString(8));
-						singleEvent.put("showState", rs.getString(9));
-						singleEvent.put("showCountry", rs.getString(10));
-						singleEvent.put("showType", rs.getInt(11));
-						singleEvent.put("homeConfirmed", rs.getInt(12));
-						singleEvent.put("showLat", rs.getFloat(13));
-						singleEvent.put("showLng", rs.getFloat(14));
-						allEvents.put(singleEvent);
-					} catch (JSONException e) {
-						System.out.println(e.getMessage());
-					}
-				}
-				try {
-					fullOb.put("tourDates", allEvents);
-					return String.valueOf(fullOb);
-				} catch (JSONException ex) {
-					System.out.println(ex.getMessage());
-				}
+				String eventList = Util.makeShowList(rs);
+					conn.close();
+					return eventList;
 			} else {
 				System.out.println("didn't get anything back...");
 			}
-			
-			conn.close();
 		} catch (SQLException ex) {
 			System.out.println(ex.getMessage());
 		}
 		
 		return "failure.....";
+	}
+	
+	public String getShowsWithinZipRange(int bottom, int top) {
+		try {
+			ResultSet rs = stmt.executeQuery("SELECT * FROM tour_show where show_zip between '"
+		+ String.valueOf(bottom) + "' and '" + String.valueOf(top) + "';");
+			String result = Util.makeShowList(rs);
+			
+			conn.close();
+			return result;
+			} catch(SQLException e) {
+				System.out.println(e.getMessage());
+			}
+			
+			return "failure...";
+	}
+	
+	public String getShowsInState(String state) {
+		try {
+		ResultSet rs = stmt.executeQuery("SELECT * FROM tour_show where show_state = '" + state + "';");
+		String result = Util.makeShowList(rs);
+		
+		conn.close();
+		return result;
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return "failure...";
+	}
+	public String getShowsInTown(String city) {
+		try {
+			ResultSet rs = stmt.executeQuery("SELECT * FROM tour_show where show_city = '" + city + "';");
+			String result = Util.makeShowList(rs);
+			
+			conn.close();
+			return result;
+			} catch(SQLException e) {
+				System.out.println(e.getMessage());
+			}
+			
+			return "failure...";
+	}
+	public String showsInTownWithoutConfirmation(String city) {
+		try {
+			ResultSet rs = stmt.executeQuery("SELECT * FROM tour_show where show_city = '" + city + "' and home_confirmed ="
+					+ " 0;");
+			String result = Util.makeShowList(rs);
+			
+			conn.close();
+			return result;
+			} catch(SQLException e) {
+				System.out.println(e.getMessage());
+			}
+			
+			return "failure...";
+	}
+	public String showsInTownOfHomes(String fanEmail, String fanPassword) {
+		
+		try {
+			try {
+			JSONObject userHomes = new JSONObject(getFanHomes(fanEmail,fanPassword));
+			System.out.println(userHomes.toString());
+			JSONArray homes = userHomes.optJSONArray("homes");
+			JSONArray showsCloseToHomes = new JSONArray();
+			for (int i = 0; i < homes.length(); i++) {
+				JSONObject singleHome = homes.optJSONObject(i);
+				DBConnection newConn = new DBConnection();
+				JSONObject inTownShows = new JSONObject(newConn.getShowsInTown(singleHome.optString("homeCity")));
+				showsCloseToHomes.put(inTownShows);
+			}
+			
+			String showsInTown = showsCloseToHomes.toString();
+			conn.close();
+			return showsInTown;
+			
+			} catch (JSONException e) {
+				System.out.println(e.getMessage());
+			}
+		} catch (SQLException e) {
+			System.out.println("SQL Error... " + e.getMessage());
+		}
+		
+		
+		
+		return "failure...";
+	}
+public String showsInTownWithoutHome(String fanEmail, String fanPassword) {
+		
+		try {
+			try {
+			JSONObject userHomes = new JSONObject(getFanHomes(fanEmail,fanPassword));
+			System.out.println(userHomes.toString());
+			JSONArray homes = userHomes.optJSONArray("homes");
+			JSONArray showsCloseToHomes = new JSONArray();
+			for (int i = 0; i < homes.length(); i++) {
+				JSONObject singleHome = homes.optJSONObject(i);
+				DBConnection newConn = new DBConnection();
+				JSONObject inTownShows = new JSONObject(newConn.showsInTownWithoutConfirmation(singleHome.optString("homeCity")));
+				showsCloseToHomes.put(inTownShows);
+			}
+			
+			String showsInTown = showsCloseToHomes.toString();
+			conn.close();
+			return showsInTown;
+			
+			} catch (JSONException e) {
+				System.out.println(e.getMessage());
+			}
+		} catch (SQLException e) {
+			System.out.println("SQL Error... " + e.getMessage());
+		}
+		
+		
+		
+		return "failure...";
+	}
+	
+	public String getFanHomes(String fanEmail, String fanPassword) {
+		
+		int fanID = -1;
+		
+		try {
+			try {
+			JSONObject userOb = new JSONObject(getLogin(fanEmail,fanPassword));
+			
+			
+			fanID = userOb.optInt("fanID");
+			
+			ResultSet rs = stmt.executeQuery("SELECT * FROM fan_home where fan_id = '" + String.valueOf(fanID) + "';");
+			System.out.println("Success!!!");
+			System.out.println("This hapened");
+			String madeHomes = Util.makeHome(rs);
+			conn.close();
+			return madeHomes;
+			
+			} catch (JSONException e) {
+				System.out.println(e.getMessage());
+			}
+		} catch (SQLException e) {
+			System.out.println("SQL Error... " + e.getMessage());
+		}
+		
+		
+		return "failure....";
 	}
 
 	public String addBand(String name, String genre) {
@@ -423,9 +510,9 @@ public class DBConnection {
 		return "failure...";
 	}
 	
-	public String addFan(String fanName, String fanEmail, String fanPass) {
+	public String addFan(String fanName, String fanEmail, String fanPass, String fanPhoto) {
 		try {
-			stmt.execute("INSERT INTO fan (fan_name,fan_email,fan_pass) values('"+fanName +"','" + fanEmail+"','" + fanPass + "');");
+			stmt.execute("INSERT INTO fan (fan_name,fan_email,fan_pass, fan_photo) values('"+fanName +"','" + fanEmail+"','" + fanPass + "','" + fanPhoto + "');");
 			conn.close();
 			return "Success!";
 		}
@@ -434,6 +521,44 @@ public class DBConnection {
 		}
 		
 		return "failure...";
+	}
+	public String addHome(String fanEmail, String fanPassword,
+			String homeName, String homeAddress, String homeAddressTwo,
+			int homeZip, String homeCity, String homeState, String homeCountry,
+			float homeLat, float homeLng, String homePhoto) {
+		
+		int userID = -1;
+		
+		try {
+			JSONObject fullOb = new JSONObject(getLogin(fanEmail,fanPassword));
+			
+			userID = fullOb.optInt("fanID");
+			
+			try {
+				System.out.println("INSERT INTO fan_home (fan_id, home_name, home_address, home_address_2,"
+						+ "home_zip, home_city, home_state, home_country, home_lat, home_lng, home_photo) "
+						+ "VALUES('" + String.valueOf(userID) + "','" + homeName + "','" + homeAddress + "','"
+						+ homeAddressTwo + "','" + String.valueOf(homeZip) + "','" + homeCity + "','"
+						+ homeState+ "','" + homeCountry + "','" + String.valueOf(homeLat) + "','" + String.valueOf(homeLng)
+						+ "','" + homePhoto + "');");
+				
+				stmt.execute("INSERT INTO fan_home (fan_id, home_name, home_address, home_address_2,"
+						+ "home_zip, home_city, home_state, home_country, home_lat, home_lng, home_photo) "
+						+ "VALUES('" + String.valueOf(userID) + "','" + homeName + "','" + homeAddress + "','"
+						+ homeAddressTwo + "','" + String.valueOf(homeZip) + "','" + homeCity + "','"
+						+ homeState+ "','" + homeCountry + "','" + String.valueOf(homeLat) + "','" + String.valueOf(homeLng)
+						+ "','" + homePhoto + "');");
+				
+				return "Success!";
+			} catch (SQLException e) {
+				System.out.println(e.getMessage());
+			}
+		} catch (JSONException e) {
+			
+		}
+		
+		
+		return "failure....";
 	}
 	
 }
