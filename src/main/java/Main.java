@@ -14,43 +14,9 @@ public class Main extends Thread{
 	public static void main(String[] args) {
 		
 		
-		
-		
-		
 		get("/bands", (req, res) -> {
 			DBConnection conn = new DBConnection();
 			return conn.getBands();
-		});
-		 
-		get("/bandNames", (req, res) -> {
-			DBConnection conn = new DBConnection();
-			ArrayList<String> bandNames = conn.getBandNames();
-
-			JSONObject fullOb = new JSONObject();
-			JSONArray allBands = new JSONArray();
-			for (int i = 0; i < bandNames.size(); i++) {
-				try {
-					JSONObject singleBand = new JSONObject();
-					singleBand.put("bandName", bandNames.get(i));
-					allBands.put(singleBand);
-				} catch (JSONException e) {
-					System.out.println(e.getMessage());
-				}
-			}
-			try {
-				fullOb.put("bands", allBands);
-			} catch (JSONException e) {
-				System.out.println(e.getMessage());
-			}
-
-			System.out.println("This happened");
-			return fullOb;
-		});
-		get("/fan/:fanID", (req,res) -> {
-			
-			DBConnection conn = new DBConnection();
-			return conn.getFan(Integer.parseInt(req.params(":fanID")));
-			
 		});
 		
 		get("/fanLogin/:userName/:password", (req,res) -> {
@@ -65,14 +31,17 @@ public class Main extends Thread{
 			DBConnection conn = new DBConnection();
 			return conn.getAllFans();
 		});
+		
 		get("/band/:bandID", (req, res) -> {
 			DBConnection conn = new DBConnection();
 			return conn.getBandName(Integer.parseInt(req.params(":bandID")));
 		});
+		
 		get("/tours", (req, res) -> {
 			DBConnection conn = new DBConnection();
 			return conn.getTours();
 		});
+		
 		get("/eventsByID/:tourID", (req,res) -> {
 			DBConnection conn = new DBConnection();
 			return conn.getEventByID(Integer.parseInt(req.params(":tourID")));
@@ -82,16 +51,22 @@ public class Main extends Thread{
 			DBConnection conn = new DBConnection();
 			return conn.getFanHomes(req.params(":userName"), req.params(":password"));
 		});
-		get("homeInTown/:username/:password", (req,res) -> {
+		get("showsInTown/:username/:password", (req,res) -> {
 			DBConnection conn = new DBConnection();
 			
 			return conn.showsInTownOfHomes(req.params(":userName"),
 					req.params(":password"));
 		});
-		get("homeInTownWithoutConfirmation/:username/:password", (req,res) -> {
+		get("showsInTownWithoutConfirmation/:username/:password", (req,res) -> {
 			DBConnection conn = new DBConnection();
 			
 			return conn.showsInTownWithoutHome(req.params(":userName"),
+					req.params(":password"));
+		});
+		get("fanToBandByGenre/:userName/:password", (req,res) -> {
+			DBConnection conn = new DBConnection();
+			
+			return conn.fanToBandByGenre(req.params(":userName"),
 					req.params(":password"));
 		});
 

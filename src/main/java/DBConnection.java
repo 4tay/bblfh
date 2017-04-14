@@ -41,9 +41,16 @@ public class DBConnection {
 
 		System.out.println("attempt connection");
 		dataSource = new MysqlDataSource();
-		dataSource.setUser(userName);
-		dataSource.setPassword(password);
-		dataSource.setServerName("127.0.0.1");
+		
+		dataSource.setUser("businessFawn");
+		dataSource.setPassword("D#Wg0ng");
+		dataSource.setServerName("192.168.1.78");
+		System.out.println("THISSSSS");
+		
+		
+//		dataSource.setUser(userName);
+//		dataSource.setPassword(password);
+//		dataSource.setServerName("127.0.0.1");
 		dataSource.setPort(3306);
 		dataSource.setDatabaseName("harbor");
 
@@ -73,53 +80,6 @@ public class DBConnection {
 		return "failure....";
 	}
 	
-	public String getFan(int fanID) {
-		try {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM fan where fan_id = '" + String.valueOf(fanID) + "';");
-			System.out.println("Success!!!");
-			System.out.println("This hapened");
-			if (rs.first()) {
-				JSONObject fullOb = new JSONObject();
-				JSONArray allFans = new JSONArray();
-				try {
-					JSONObject singleFan = new JSONObject();
-					singleFan.put("fanID", rs.getInt(1));
-					singleFan.put("fanName", rs.getString(2));
-					singleFan.put("fanEmail", rs.getString(3));
-					singleFan.put("fanRank", rs.getInt(4));
-					allFans.put(singleFan);
-				} catch (JSONException e) {
-					System.out.println(e.getMessage());
-				}
-				System.out.println("moved to first!");
-				while (rs.next()) {
-					try {
-						JSONObject singleFan = new JSONObject();
-						singleFan.put("fanID", rs.getInt(1));
-						singleFan.put("fanName", rs.getString(2));
-						singleFan.put("fanEmail", rs.getString(3));
-						singleFan.put("fanRank", rs.getInt(4));
-						allFans.put(singleFan);
-					} catch (JSONException e) {
-						System.out.println(e.getMessage());
-					}
-				}
-				try {
-					fullOb.put("fans", allFans);
-					conn.close();
-					return String.valueOf(fullOb);
-				} catch (JSONException ex) {
-					System.out.println(ex.getMessage());
-				}
-			} else {
-				System.out.println("didn't get anything back...");
-			}
-			conn.close();
-		} catch (SQLException ex) {
-			System.out.println("Error: " + ex.getMessage());
-		}
-		return "failure...";
-	}
 	
 	public String getAllFans() {
 		try {
@@ -169,28 +129,6 @@ public class DBConnection {
 		return "failure....";
 	}
 
-	public ArrayList<String> getBandNames() {
-		ArrayList<String> myArray = new ArrayList<String>();
-		try {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM band");
-			System.out.println("Success!!!");
-			if (rs.first()) {
-				System.out.println("moved to first!");
-				myArray.add(rs.getString(2));
-				System.out.println("1 test: " + rs.getString(2));
-				while (rs.next()) {
-					myArray.add(rs.getString(2));
-					System.out.println("1 test: " + rs.getString(2));
-				}
-			} else {
-				System.out.println("didn't get anything back...");
-			}
-			conn.close();
-		} catch (SQLException ex) {
-			System.out.println("Error: " + ex.getMessage());
-		}
-		return myArray;
-	}
 
 	public String getBands() {
 		try {
@@ -200,27 +138,16 @@ public class DBConnection {
 			if (rs.first()) {
 				JSONObject fullOb = new JSONObject();
 				JSONArray allBands = new JSONArray();
-				try {
-					JSONObject singleBand = new JSONObject();
-					singleBand.put("bandID", rs.getInt(1));
-					singleBand.put("bandName", rs.getString(2));
-					singleBand.put("bandGenre", rs.getString(3));
-					allBands.put(singleBand);
-				} catch (JSONException e) {
-					System.out.println(e.getMessage());
-				}
-				System.out.println("moved to first!");
-				while (rs.next()) {
+				do{
 					try {
 						JSONObject singleBand = new JSONObject();
 						singleBand.put("bandID", rs.getInt(1));
 						singleBand.put("bandName", rs.getString(2));
-						singleBand.put("bandGenre", rs.getString(3));
 						allBands.put(singleBand);
 					} catch (JSONException e) {
 						System.out.println(e.getMessage());
 					}
-				}
+				} while (rs.next());
 				try {
 					fullOb.put("bands", allBands);
 					return String.valueOf(fullOb);
@@ -352,7 +279,7 @@ public class DBConnection {
 	}
 	public String getShowsInTown(String city) {
 		try {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM tour_show where show_city = '" + city + "';");
+			ResultSet rs = stmt.executeQuery("SELECT * FROM tour_show where show_city = '" + city + " and show_date > current_date';");
 			String result = Util.makeShowList(rs);
 			
 			conn.close();
@@ -366,7 +293,7 @@ public class DBConnection {
 	public String showsInTownWithoutConfirmation(String city) {
 		try {
 			ResultSet rs = stmt.executeQuery("SELECT * FROM tour_show where show_city = '" + city + "' and home_confirmed ="
-					+ " 0;");
+					+ " 0 and show_date > current_date;");
 			String result = Util.makeShowList(rs);
 			
 			conn.close();
@@ -414,15 +341,20 @@ public String showsInTownWithoutHome(String fanEmail, String fanPassword) {
 			JSONObject userHomes = new JSONObject(getFanHomes(fanEmail,fanPassword));
 			System.out.println(userHomes.toString());
 			JSONArray homes = userHomes.optJSONArray("homes");
+			JSONObject allShows = new JSONObject();
 			JSONArray showsCloseToHomes = new JSONArray();
 			for (int i = 0; i < homes.length(); i++) {
 				JSONObject singleHome = homes.optJSONObject(i);
 				DBConnection newConn = new DBConnection();
-				JSONObject inTownShows = new JSONObject(newConn.showsInTownWithoutConfirmation(singleHome.optString("homeCity")));
+				System.out.println(singleHome.optString("homeCity"));
+				JSONObject inTownShows = new JSONObject(
+						newConn.showsInTownWithoutConfirmation(
+								singleHome.optString("homeCity")));
+				inTownShows.put("homeName",singleHome.opt("homeName"));
 				showsCloseToHomes.put(inTownShows);
 			}
-			
-			String showsInTown = showsCloseToHomes.toString();
+			allShows.put("shows", showsCloseToHomes);
+			String showsInTown = allShows.toString();
 			conn.close();
 			return showsInTown;
 			
@@ -465,6 +397,103 @@ public String showsInTownWithoutHome(String fanEmail, String fanPassword) {
 		
 		
 		return "failure....";
+	}
+	
+	public String getFanGenres(String fanEmail, String fanPassword) {
+int fanID = -1;
+		
+		try {
+			try {
+			JSONObject userOb = new JSONObject(getLogin(fanEmail,fanPassword));
+			
+			
+			fanID = userOb.optInt("fanID");
+			
+			ResultSet rs = stmt.executeQuery("SELECT genre.genre_id, genre_name FROM fan_to_genre as f2g join "
+					+ "genre on f2g.genre_id = genre.genre_id where fan_id = '" + String.valueOf(fanID) + "';");
+			System.out.println("Success!");
+			System.out.println("This hapened");
+			String genreList = Util.makeGenreList(rs);
+			conn.close();
+			return genreList;
+			
+			} catch (JSONException e) {
+				System.out.println(e.getMessage());
+			}
+		} catch (SQLException e) {
+			System.out.println("SQL Error... " + e.getMessage());
+		}
+		
+		
+		return "failure....";
+	}
+	public String getBandsByGenreID(int genreID) {
+				try {
+					ResultSet rs = stmt.executeQuery("SELECT band.* FROM band_to_genre as b2g join "
+							+ "band on b2g.band_id = band.band_id where genre_id = '" + String.valueOf(genreID) + "';");
+					System.out.println("Success!");
+					System.out.println("This hapened");
+					String genreList = Util.makeBandList(rs);
+					conn.close();
+					return genreList;
+				} catch (SQLException e) {
+					System.out.println("SQL Error... " + e.getMessage());
+				}
+				
+				
+				return "failure....";
+			}
+	public String getBandByGenresName(String genreName) {
+		try {
+			ResultSet rs = stmt.executeQuery("SELECT band.* FROM band_to_genre as b2g join "
+					+ "band on b2g.band_id = band.band_id"
+					+ "join genre on b2g.genre_id = genre.genre_id "
+					+ "where genre_name = '" + genreName + "';");
+			System.out.println("Success!!!");
+			System.out.println("This hapened");
+			String genreList = Util.makeBandList(rs);
+			conn.close();
+			return genreList;
+		} catch (SQLException e) {
+			System.out.println("SQL Error... " + e.getMessage());
+		}
+		
+		
+		return "failure....";
+	}
+	
+public String fanToBandByGenre(String fanEmail, String fanPassword) {
+		
+		try {
+			JSONObject userGenres = new JSONObject(getFanGenres(fanEmail,fanPassword));
+			JSONArray allUserGenres = userGenres.getJSONArray("genres");
+			System.out.println(userGenres.toString());
+			
+			JSONObject fullBandOb = new JSONObject();
+			JSONArray allBandGenres = new JSONArray();
+			
+			for(int i = 0; i < allUserGenres.length(); i++) {
+				DBConnection conn2 = new DBConnection();
+				JSONObject genre = allUserGenres.getJSONObject(i);
+				System.out.println(i + " " + genre.toString());
+				JSONObject bandsInGenre = new JSONObject(conn2.getBandsByGenreID(genre.optInt("genreID")));
+				System.out.println(i + " " + bandsInGenre.toString());
+				bandsInGenre.put("genreName", genre.optString("genreName"));
+				System.out.println(i + " " + bandsInGenre.toString());
+				allBandGenres.put(bandsInGenre);
+					
+			}
+				fullBandOb.put("allGenresWithBands", allBandGenres);
+			
+			return fullBandOb.toString();
+			
+			} catch (JSONException e) {
+				System.out.println(e.getMessage());
+			}
+		
+		
+		
+		return "failure...";
 	}
 
 	public String addBand(String name, String genre) {

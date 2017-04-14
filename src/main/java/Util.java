@@ -89,5 +89,64 @@ public class Util {
 	}
 	return "failure...";
 	}
+	
+	
+	public static String makeBandList(ResultSet rs) {
+		try {
+			if (rs.first()) {
+			JSONObject fullOb = new JSONObject();
+			JSONArray allBands = new JSONArray();
+			try{ 
+				do{
+					JSONObject singleBand = new JSONObject();
+				singleBand.put("bandID", rs.getInt(1));
+				singleBand.put("bandName", rs.getString(2));
+				singleBand.put("bandPhoto", rs.getString(3));
+				System.out.println("Building bands.... " + singleBand.toString());
+				allBands.put(singleBand);
+				} while (rs.next());
+				fullOb.put("bands", allBands);
+				return String.valueOf(fullOb);
+			}
+			catch (JSONException e) {
+				System.out.println(e.getMessage());
+			}
+		} else {
+			System.out.println("didn't get anything back...");
+		} 
+			}
+		catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		return "failure...";
+		}
+	
+	public static String makeGenreList(ResultSet rs) {
+		try {
+			if (rs.first()) {
+			JSONObject fullOb = new JSONObject();
+			JSONArray allGenres = new JSONArray();
+			try{ 
+				do{
+				JSONObject genre = new JSONObject();
+				genre.put("genreID", rs.getInt(1));
+				genre.put("genreName", rs.getString(2));
+				allGenres.put(genre);
+				} while (rs.next());
+				fullOb.put("genres", allGenres);
+				return String.valueOf(fullOb);
+			}
+			catch (JSONException e) {
+				System.out.println(e.getMessage());
+			}
+		} else {
+			System.out.println("didn't get anything back...");
+		} 
+			}
+		catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		return "failure...";
+	}
 
 }
